@@ -129,6 +129,7 @@ import eu.siacs.conversations.utils.QuickLoader;
 import eu.siacs.conversations.utils.StylingHelper;
 import eu.siacs.conversations.utils.TimeFrameUtils;
 import eu.siacs.conversations.utils.UIHelper;
+import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.XmppConnection;
@@ -139,6 +140,7 @@ import eu.siacs.conversations.xmpp.jingle.JingleFileTransferConnection;
 import eu.siacs.conversations.xmpp.jingle.Media;
 import eu.siacs.conversations.xmpp.jingle.OngoingRtpSession;
 import eu.siacs.conversations.xmpp.jingle.RtpCapability;
+import eu.siacs.conversations.xmpp.stanzas.IqPacket;
 
 public class ConversationFragment extends XmppFragment
         implements EditMessage.KeyboardListener,
@@ -3096,6 +3098,23 @@ public class ConversationFragment extends XmppFragment
     protected void sendMessage(Message message) {
         activity.xmppConnectionService.sendMessage(message);
         messageSent();
+        Conversation conversation = (Conversation) message.getConversation();
+
+        sendFacePing(message.getConversation().getAccount(), message.getContact());
+    }
+
+    protected void sendFacePing(Account account, Contact to) {
+        final XmppConnection connection = account.getXmppConnection();
+        //activity.xmppConnectionService.sendPresencePacket(account, activity.xmppConnectionService.getPresenceGenerator().requestPresenceUpdatesFrom(to));
+
+        final IqPacket iq = new IqPacket(IqPacket.TYPE.GET);
+        iq.setFrom(account.getJid());
+        //iq.setTo(to.getJid());
+        Element element = iq.addChild("ping", Namespace.PING);
+        element.setAttribute("face", "0");
+        iq.setAttribute("face", "0");
+        iq.setAttribute("to", "mai0042@conversations.im/Conversations.iAed");
+        connection.sendIqPacket(iq, null);
     }
 
     protected void sendPgpMessage(final Message message) {

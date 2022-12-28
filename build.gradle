@@ -33,7 +33,7 @@ configurations {
 dependencies {
     implementation 'androidx.viewpager:viewpager:1.0.0'
 
-    playstoreImplementation('com.google.firebase:firebase-messaging:23.1.0') {
+    playstoreImplementation('com.google.firebase:firebase-messaging:23.1.1') {
         exclude group: 'com.google.firebase', module: 'firebase-core'
         exclude group: 'com.google.firebase', module: 'firebase-analytics'
         exclude group: 'com.google.firebase', module: 'firebase-measurement-connector'
@@ -76,12 +76,12 @@ dependencies {
 
     implementation 'com.google.guava:guava:31.1-android'
     quicksyImplementation 'io.michaelrocks:libphonenumber-android:8.12.49'
-    freeImplementation 'ch.threema:webrtc-android:100.0.0'
+    // temporarily use Snikket’s build of WebRTC. The next release will use our own build
+    freeImplementation 'org.snikket:webrtc-android:107.0.0'
     playstoreImplementation fileTree(include: ['libwebrtc-m107.aar'], dir: 'libs')
 }
 
 ext {
-    travisBuild = System.getenv("TRAVIS") == "true"
     preDexEnabled = System.getProperty("pre-dex", "true")
     abiCodes = ['armeabi-v7a': 1, 'x86': 2, 'x86_64': 3, 'arm64-v8a': 4]
 }
@@ -93,14 +93,14 @@ android {
     defaultConfig {
         minSdkVersion 21
         targetSdkVersion 32
-        versionCode 42040
-        versionName "2.11.0-beta.2"
+        versionCode 42043
+        versionName "2.11.2"
         archivesBaseName += "-$versionName"
         applicationId "eu.siacs.conversations"
         resValue "string", "applicationId", applicationId
         def appName = "Conversations"
         resValue "string", "app_name", appName
-        buildConfigField "String", "APP_NAME", "\"$appName\"";
+        buildConfigField "String", "APP_NAME", "\"$appName\""
     }
 
     splits {
@@ -134,7 +134,7 @@ android {
 
             def appName = "Quicksy"
             resValue "string", "app_name", appName
-            buildConfigField "String", "APP_NAME", "\"$appName\"";
+            buildConfigField "String", "APP_NAME", "\"$appName\""
         }
 
         conversations {

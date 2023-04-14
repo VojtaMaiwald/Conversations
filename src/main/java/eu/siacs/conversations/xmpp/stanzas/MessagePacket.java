@@ -12,6 +12,7 @@ public class MessagePacket extends AbstractAcknowledgeableStanza {
 	public static final int TYPE_GROUPCHAT = 3;
 	public static final int TYPE_ERROR = 4;
 	public static final int TYPE_HEADLINE = 5;
+	public static final int TYPE_EMOTION = 6;
 
 	public MessagePacket() {
 		super("message");
@@ -46,6 +47,9 @@ public class MessagePacket extends AbstractAcknowledgeableStanza {
 		case TYPE_ERROR:
 			this.setAttribute("type","error");
 			break;
+		case TYPE_EMOTION:
+			this.setAttribute("type","emotion");
+			break;
 		default:
 			this.setAttribute("type", "chat");
 			break;
@@ -66,6 +70,8 @@ public class MessagePacket extends AbstractAcknowledgeableStanza {
 			return TYPE_ERROR;
 		} else if (type.equals("headline")) {
 			return TYPE_HEADLINE;
+		} else if (type.equals("emotion")) {
+			return TYPE_EMOTION;
 		} else {
 			return TYPE_NORMAL;
 		}

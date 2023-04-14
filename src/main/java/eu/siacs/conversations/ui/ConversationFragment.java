@@ -141,6 +141,7 @@ import eu.siacs.conversations.xmpp.jingle.Media;
 import eu.siacs.conversations.xmpp.jingle.OngoingRtpSession;
 import eu.siacs.conversations.xmpp.jingle.RtpCapability;
 import eu.siacs.conversations.xmpp.stanzas.IqPacket;
+import eu.siacs.conversations.xmpp.stanzas.MessagePacket;
 
 public class ConversationFragment extends XmppFragment
         implements EditMessage.KeyboardListener,
@@ -3100,7 +3101,21 @@ public class ConversationFragment extends XmppFragment
         messageSent();
         Conversation conversation = (Conversation) message.getConversation();
 
-        sendFacePing(message.getConversation().getAccount(), message.getContact());
+        //sendFacePing(message.getConversation().getAccount(), message.getContact());
+
+        sendEmotionMessage(message.getConversation().getAccount(), message.getContact());
+    }
+
+    protected void sendEmotionMessage(Account account, Contact to) {
+        MessagePacket packet = new MessagePacket();
+        packet.setType(MessagePacket.TYPE_EMOTION);
+        packet.setTo(to.getJid());
+        packet.setFrom(account.getJid());
+        Element emotionTag = packet.addChild("emotion");
+        emotionTag.setContent("0");
+
+        final XmppConnection connection = account.getXmppConnection();
+        connection.sendMessagePacket(packet);
     }
 
     protected void sendFacePing(Account account, Contact to) {

@@ -3,7 +3,7 @@
 <p align="center">Conversations: the very last word in instant messaging</p>
 
 <p align="center">
-  <a href="https://play.google.com/store/apps/details?id=eu.siacs.conversations&amp;referrer=utm_source%3Dgithub">
+  <a href="https://play.google.com/store/apps/details?id=eu.siacs.conversations&amp;referrer=utm_source%3Dcodeberg">
     <img src="https://conversations.im/images/get-it-on-play.png" alt="Get it on Google Play" height="80">
   </a>
   <a href="https://f-droid.org/packages/eu.siacs.conversations">
@@ -11,7 +11,7 @@
   </a>
 </p>
 
-![screenshots](https://raw.githubusercontent.com/inputmice/Conversations/master/screenshots.png)
+![screenshots](https://codeberg.org/iNPUTmice/Conversations/raw/branch/master/screenshots.png)
 
 ## Design principles
 
@@ -47,13 +47,14 @@ support these extensions; therefore to get the most out of Conversations you
 should consider either switching to an XMPP server that does or — even better —
 run your own XMPP server for you and your friends. These XEP's are:
 
-* [XEP-0065: SOCKS5 Bytestreams](http://xmpp.org/extensions/xep-0065.html) (or mod_proxy65). Will be used to transfer
+* [XEP-0065: SOCKS5 Bytestreams](http://xmpp.org/extensions/xep-0065.html) will be used to transfer
   files if both parties are behind a firewall (NAT).
 * [XEP-0163: Personal Eventing Protocol](http://xmpp.org/extensions/xep-0163.html) for avatars and OMEMO.
 * [XEP-0191: Blocking command](http://xmpp.org/extensions/xep-0191.html) lets you blacklist spammers or block contacts
   without removing them from your roster.
 * [XEP-0198: Stream Management](http://xmpp.org/extensions/xep-0198.html) allows XMPP to survive small network outages and
   changes of the underlying TCP connection.
+* [XEP-0215: External Service Discovery](https://xmpp.org/extensions/xep-0215.html) will be used to discover STUN and TURN servers which facilitate P2P A/V calls.
 * [XEP-0280: Message Carbons](http://xmpp.org/extensions/xep-0280.html) which automatically syncs the messages you send to
   your desktop client and thus allows you to switch seamlessly from your mobile
   client to your desktop client and back within one conversation.
@@ -79,7 +80,7 @@ build your apk file.
 
 The more convenient way — which not only gives you automatic updates but also
 supports the further development of Conversations — is to buy the App in the
-Google [Play Store](https://play.google.com/store/apps/details?id=eu.siacs.conversations&referrer=utm_source%3Dgithub).
+Google [Play Store](https://play.google.com/store/apps/details?id=eu.siacs.conversations&referrer=utm_source%3Dcodeberg).
 
 Buying the App from the Play Store will also give you access to our [beta test](#beta).
 
@@ -258,11 +259,9 @@ Conversations is trying to get rid of old behaviours and set an example for
 other clients.
 
 #### Translations
-Translations are managed on [Transifex](https://www.transifex.com/projects/p/conversations/).
-If you want to become a translator  Please register on transifex, apply to join
-the translation team and then step by our group chat on
-[conversations@conference.siacs.eu](https://conversations.im/j/conversations@conference.siacs.eu)
-and introduce yourself to `iNPUTmice` so he can approve your join request.
+Translations are managed on [Weblate](https://translate.codeberg.org/projects/conversations/).
+
+You can log in with your Codeberg account and start translating.
 
 #### How do I backup / move Conversations to a new device?
 
@@ -371,41 +370,6 @@ you can get access to the the latest beta version by signing up using [this link
 
 #### How do I build Conversations
 
-##### Compiling WebRTC.
-
-WebRTC is a standard for Internet audio and video communication. libwebrtc, also used in the Google Chrome web browser, implementing the WebRTC standard.
-
-**Note:** Starting with version 2.8.0 you will need to compile libwebrtc from source because there are no fresh binary releases available to download.
-
-[Instructions](https://webrtc.github.io/webrtc-org/native-code/android/) can be found on the WebRTC website, however, there build method used by Conversations developers is slightly different.
-
-```
-mkdir -p ~/Prerequisites-for-Conversations
-cd ~/Prerequisites-for-Conversations
-git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
-export PATH=~/Prerequisites-for-Conversations/depot_tools:$PATH
-mkdir webrtc
-cd webrtc
-fetch --nohooks webrtc_android
-# ...wait for 20Gb of stuff...
-gclient sync
-# ...wait for more 5Gb of stuff...
-cd src
-unset _JAVA_OPTS
-./tools_webrtc/android/build_aar.py
-```
-
-It will take some time and build webrtc for all popular Android architectures.
-The result will be the file `./libwebrtc.aar`
-
-
-##### Building Conversations itself
-
-Place the resulting libwebrtc.aar in the `libs/` directory. The PlayStore release currently
-uses the stable M90 release and renamed the file name to `libwebrtc-m90.aar` put potentially you can
-reference any file name by modifying `build.gradle`. Search for `libwebrtc-m90.aar`, and replace it with `libwebrtc.aar`.
-
-
 Make sure to have ANDROID_HOME point to your Android SDK. Use the Android SDK Manager to install missing dependencies.
 
 Alternatively (and to avoid thinking about environment variables), create a file called local.properties, in the root of the Conversations build tree,
@@ -425,7 +389,7 @@ sdk.dir=Path-To-Sdk
 
 Then issue the following commands in order to build the apk.
 
-    git clone https://github.com/inputmice/Conversations.git
+    git clone https://codeberg.org/iNPUTmice/Conversations.git
     cd Conversations
     ./gradlew assembleConversationsFreeDebug
 
@@ -466,11 +430,9 @@ directly on your rooted phone. (Search for logcat). However in regards to furthe
 
 #### I found a bug
 
-Please report it to our [issue tracker][issues]. If your app crashes please
+Please report it to our [issue tracker](https://codeberg.org/iNPUTmice/Conversations/issues). If your app crashes please
 provide a stack trace. If you are experiencing misbehavior please provide
 detailed steps to reproduce. Always mention whether you are running the latest
 Play Store version or the current HEAD. If you are having problems connecting to
 your XMPP server your file transfer doesn’t work as expected please always
 include a logcat debug output with your issue (see above).
-
-[issues]: https://github.com/inputmice/Conversations/issues

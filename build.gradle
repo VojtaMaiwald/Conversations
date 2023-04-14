@@ -6,7 +6,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.3.1'
+        classpath 'com.android.tools.build:gradle:7.4.1'
     }
 }
 
@@ -76,9 +76,7 @@ dependencies {
 
     implementation 'com.google.guava:guava:31.1-android'
     quicksyImplementation 'io.michaelrocks:libphonenumber-android:8.12.49'
-    // temporarily use Snikket’s build of WebRTC. The next release will use our own build
-    freeImplementation 'org.snikket:webrtc-android:107.0.0'
-    playstoreImplementation fileTree(include: ['libwebrtc-m107.aar'], dir: 'libs')
+    implementation 'im.conversations.webrtc:webrtc-android:104.0.0'
 }
 
 ext {
@@ -93,8 +91,8 @@ android {
     defaultConfig {
         minSdkVersion 21
         targetSdkVersion 32
-        versionCode 42043
-        versionName "2.11.2"
+        versionCode 42050
+        versionName "2.12.2"
         archivesBaseName += "-$versionName"
         applicationId "eu.siacs.conversations"
         resValue "string", "applicationId", applicationId

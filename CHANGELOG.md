@@ -1,5 +1,23 @@
 # Changelog
 
+### Version 2.12.2
+
+* Increase corner radius on profile pictures
+
+### Version 2.12.1
+
+* Fix crash in UnifiedPush Distributor
+
+### Version 2.12.0
+
+* Integrate UnifiedPush Distributor to facilitate push messages to other UnifiedPush enabled apps like Tusky and Fedilab
+
+### Version 2.11.3
+
+* Fix messages getting resend when using SASL2
+* Fix black video between some devices
+* Fix crash on empty passwords
+
 ### Version 2.11.2
 
 * Fixed regression in P2P file transfer

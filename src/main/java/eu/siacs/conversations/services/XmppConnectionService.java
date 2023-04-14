@@ -53,6 +53,7 @@ import androidx.core.app.RemoteInput;
 import androidx.core.content.ContextCompat;
 
 import com.google.common.base.Objects;
+import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 
 import org.conscrypt.Conscrypt;
@@ -61,10 +62,10 @@ import org.openintents.openpgp.util.OpenPgpApi;
 import org.openintents.openpgp.util.OpenPgpServiceConnection;
 
 import java.io.File;
-import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -118,6 +119,7 @@ import eu.siacs.conversations.parser.MessageParser;
 import eu.siacs.conversations.parser.PresenceParser;
 import eu.siacs.conversations.persistance.DatabaseBackend;
 import eu.siacs.conversations.persistance.FileBackend;
+import eu.siacs.conversations.persistance.UnifiedPushDatabase;
 import eu.siacs.conversations.ui.ChooseAccountForProfilePictureActivity;
 import eu.siacs.conversations.ui.RtpSessionActivity;
 import eu.siacs.conversations.ui.SettingsActivity;
@@ -125,6 +127,7 @@ import eu.siacs.conversations.ui.UiCallback;
 import eu.siacs.conversations.ui.interfaces.OnAvatarPublication;
 import eu.siacs.conversations.ui.interfaces.OnMediaLoaded;
 import eu.siacs.conversations.ui.interfaces.OnSearchResultsAvailable;
+import eu.siacs.conversations.utils.AccountUtils;
 import eu.siacs.conversations.utils.Compatibility;
 import eu.siacs.conversations.utils.ConversationsFileObserver;
 import eu.siacs.conversations.utils.CryptoHelper;
@@ -154,7 +157,6 @@ import eu.siacs.conversations.xmpp.OnMessagePacketReceived;
 import eu.siacs.conversations.xmpp.OnPresencePacketReceived;
 import eu.siacs.conversations.xmpp.OnStatusChanged;
 import eu.siacs.conversations.xmpp.OnUpdateBlocklist;
-import eu.siacs.conversations.xmpp.Patches;
 import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.forms.Data;
@@ -187,6 +189,7 @@ public class XmppConnectionService extends Service {
     public static final String ACTION_END_CALL = "end_call";
     public static final String ACTION_PROVISION_ACCOUNT = "provision_account";
     private static final String ACTION_POST_CONNECTIVITY_CHANGE = "eu.siacs.conversations.POST_CONNECTIVITY_CHANGE";
+    public static final String ACTION_RENEW_UNIFIED_PUSH_ENDPOINTS = "eu.siacs.conversations.UNIFIED_PUSH_RENEW";
 
     private static final String SETTING_LAST_ACTIVITY_TS = "last_activity_timestamp";
 
@@ -219,6 +222,7 @@ public class XmppConnectionService extends Service {
     private final FileBackend fileBackend = new FileBackend(this);
     private MemorizingTrustManager mMemorizingTrustManager;
     private final NotificationService mNotificationService = new NotificationService(this);
+    private final UnifiedPushBroker unifiedPushBroker = new UnifiedPushBroker(this);
     private final ChannelDiscoveryService mChannelDiscoveryService = new ChannelDiscoveryService(this);
     private final ShortcutService mShortcutService = new ShortcutService(this);
     private final AtomicBoolean mInitialAddressbookSyncCompleted = new AtomicBoolean(false);
@@ -377,6 +381,7 @@ public class XmppConnectionService extends Service {
             connectMultiModeConversations(account);
             syncDirtyContacts(account);
 
+            unifiedPushBroker.renewUnifiedPushEndpointsOnBind(account);
         }
     };
     private final AtomicLong mLastExpiryRun = new AtomicLong(0);
@@ -806,6 +811,13 @@ public class XmppConnectionService extends Service {
                 case ACTION_FCM_TOKEN_REFRESH:
                     refreshAllFcmTokens();
                     break;
+                case ACTION_RENEW_UNIFIED_PUSH_ENDPOINTS:
+                    final String instance = intent.getStringExtra("instance");
+                    final Optional<UnifiedPushBroker.Transport> transport = renewUnifiedPushEndpoints();
+                    if (instance != null && transport.isPresent()) {
+                        unifiedPushBroker.rebroadcastEndpoint(instance, transport.get());
+                    }
+                    break;
                 case ACTION_IDLE_PING:
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                         scheduleNextIdlePing();
@@ -818,7 +830,7 @@ public class XmppConnectionService extends Service {
                 case Intent.ACTION_SEND:
                     Uri uri = intent.getData();
                     if (uri != null) {
-                        Log.d(Config.LOGTAG, "received uri permission for " + uri.toString());
+                        Log.d(Config.LOGTAG, "received uri permission for " + uri);
                     }
                     return START_STICKY;
             }
@@ -933,6 +945,10 @@ public class XmppConnectionService extends Service {
             }
         }
         return pingNow;
+    }
+
+    public boolean processUnifiedPushMessage(final Account account, final Jid transport, final Element push) {
+        return unifiedPushBroker.processPushMessage(account, transport, push);
     }
 
     public void reinitializeMuclumbusService() {
@@ -1169,6 +1185,7 @@ public class XmppConnectionService extends Service {
         editor.putBoolean(EventReceiver.SETTING_ENABLED_ACCOUNTS, hasEnabledAccounts).apply();
         editor.apply();
         toggleSetProfilePictureActivity(hasEnabledAccounts);
+        reconfigurePushDistributor();
 
         restoreFromDatabase();
 
@@ -1520,9 +1537,7 @@ public class XmppConnectionService extends Service {
         }
 
         MessagePacket packet = null;
-        final boolean addToConversation = (conversation.getMode() != Conversation.MODE_MULTI
-                || !Patches.BAD_MUC_REFLECTION.contains(account.getServerIdentity()))
-                && !message.edited();
+        final boolean addToConversation = !message.edited();
         boolean saveInDb = addToConversation;
         message.setStatus(Message.STATUS_WAITING);
 
@@ -2338,8 +2353,16 @@ public class XmppConnectionService extends Service {
             final int targetState = enabled ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED : PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
             getPackageManager().setComponentEnabledSetting(name, targetState, PackageManager.DONT_KILL_APP);
         } catch (IllegalStateException e) {
-            Log.d(Config.LOGTAG, "unable to toggle profile picture actvitiy");
+            Log.d(Config.LOGTAG, "unable to toggle profile picture activity");
         }
+    }
+
+    public boolean reconfigurePushDistributor() {
+        return this.unifiedPushBroker.reconfigurePushDistributor();
+    }
+
+    public Optional<UnifiedPushBroker.Transport> renewUnifiedPushEndpoints() {
+        return this.unifiedPushBroker.renewUnifiedPushEndpoints();
     }
 
     private void provisionAccount(final String address, final String password) {
@@ -3654,7 +3677,7 @@ public class XmppConnectionService extends Service {
                     }
                 });
             } else {
-                Log.d(Config.LOGTAG, "failed to request vcard " + response.toString());
+                Log.d(Config.LOGTAG, "failed to request vcard " + response);
                 callback.onAvatarPublicationFailed(R.string.error_publish_avatar_no_server_support);
             }
         });
@@ -4503,6 +4526,8 @@ public class XmppConnectionService extends Service {
         }
     }
 
+
+
     private void sendOfflinePresence(final Account account) {
         Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": sending offline presence");
         sendPresencePacket(account, mPresenceGenerator.sendOfflinePresence(account));
@@ -4680,7 +4705,7 @@ public class XmppConnectionService extends Service {
         mAvatarService.clear(account);
         sendIqPacket(account, request, (account1, packet) -> {
             if (packet.getType() == IqPacket.TYPE.ERROR) {
-                Log.d(Config.LOGTAG, account1.getJid().asBareJid() + ": unable to modify nick name " + packet.toString());
+                Log.d(Config.LOGTAG, account1.getJid().asBareJid() + ": unable to modify nick name " + packet);
             }
         });
     }

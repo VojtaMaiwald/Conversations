@@ -215,7 +215,7 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
         this.messageFingerprint = getIntent().getStringExtra("fingerprint");
         this.binding = DataBindingUtil.setContentView(this, R.layout.activity_contact_details);
 
-        setSupportActionBar(binding.toolbar);
+        setSupportActionBar(binding.toolbar.toolbar);
         configureActionBar(getSupportActionBar());
         binding.showInactiveDevices.setOnClickListener(v -> {
             showInactiveOmemo = !showInactiveOmemo;

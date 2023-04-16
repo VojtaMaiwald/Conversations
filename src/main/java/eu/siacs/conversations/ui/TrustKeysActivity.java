@@ -82,7 +82,7 @@ public class TrustKeysActivity extends OmemoActivity implements OnKeyStatusUpdat
 		binding.cancelButton.setOnClickListener(mCancelButtonListener);
 		binding.saveButton.setOnClickListener(mSaveButtonListener);
 
-		setSupportActionBar(binding.toolbar);
+		setSupportActionBar(binding.toolbar.toolbar);
 		configureActionBar(getSupportActionBar());
 
 		if (savedInstanceState != null) {

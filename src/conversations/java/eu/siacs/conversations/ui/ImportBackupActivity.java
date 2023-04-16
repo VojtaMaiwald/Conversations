@@ -49,7 +49,7 @@ public class ImportBackupActivity extends ActionBarActivity implements ServiceCo
         setTheme(this.mTheme);
         super.onCreate(savedInstanceState);
         binding = DataBindingUtil.setContentView(this, R.layout.activity_import_backup);
-        setSupportActionBar(binding.toolbar);
+        setSupportActionBar(binding.toolbar.toolbar);
         setLoadingState(savedInstanceState != null && savedInstanceState.getBoolean("loading_state", false));
         this.backupFileAdapter = new BackupFileAdapter();
         this.binding.list.setAdapter(this.backupFileAdapter);

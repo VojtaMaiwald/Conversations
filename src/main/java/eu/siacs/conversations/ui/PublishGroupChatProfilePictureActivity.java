@@ -91,7 +91,7 @@ public class PublishGroupChatProfilePictureActivity extends XmppActivity impleme
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.binding = DataBindingUtil.setContentView(this, R.layout.activity_publish_profile_picture);
-        setSupportActionBar(this.binding.toolbar);
+        setSupportActionBar(this.binding.toolbar.toolbar);
         configureActionBar(getSupportActionBar());
         this.binding.cancelButton.setOnClickListener((v) -> this.finish());
         this.binding.secondaryHint.setVisibility(View.GONE);

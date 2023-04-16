@@ -143,7 +143,7 @@ public class FileBackend {
                                 "do not consider video file with min width larger than 720 for size check");
                         continue;
                     }
-                } catch (NotAVideoFile notAVideoFile) {
+                } catch (NotAVideoFile | IOException notAVideoFile) {
                     // ignore and fall through
                 }
             }
@@ -268,7 +268,7 @@ public class FileBackend {
         return inSampleSize;
     }
 
-    private static Dimensions getVideoDimensions(Context context, Uri uri) throws NotAVideoFile {
+    private static Dimensions getVideoDimensions(Context context, Uri uri) throws NotAVideoFile, IOException {
         MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
         try {
             mediaMetadataRetriever.setDataSource(context, uri);
@@ -294,7 +294,7 @@ public class FileBackend {
     }
 
     private static Dimensions getVideoDimensions(MediaMetadataRetriever metadataRetriever)
-            throws NotAVideoFile {
+            throws NotAVideoFile, IOException {
         String hasVideo =
                 metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_VIDEO);
         if (hasVideo == null) {
@@ -1530,6 +1530,8 @@ public class FileBackend {
                 } catch (final NotAVideoFile e) {
                     Log.d(Config.LOGTAG, "ambiguous file " + mime + " is audio");
                     body.append("|0|0|").append(getMediaRuntime(file));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             } else if (image || video || pdf) {
                 try {
@@ -1552,6 +1554,8 @@ public class FileBackend {
                             Config.LOGTAG,
                             "file with mime type " + file.getMimeType() + " was not a video file");
                     // fall threw
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             } else if (audio) {
                 body.append("|0|0|").append(getMediaRuntime(file));
@@ -1592,7 +1596,7 @@ public class FileBackend {
         return new Dimensions(imageHeight, imageWidth);
     }
 
-    private Dimensions getVideoDimensions(File file) throws NotAVideoFile {
+    private Dimensions getVideoDimensions(File file) throws NotAVideoFile, IOException {
         MediaMetadataRetriever metadataRetriever = new MediaMetadataRetriever();
         try {
             metadataRetriever.setDataSource(file.getAbsolutePath());

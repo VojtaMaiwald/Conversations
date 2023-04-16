@@ -61,7 +61,7 @@ public class MagicCreateActivity extends XmppActivity implements TextWatcher {
         }
         super.onCreate(savedInstanceState);
         this.binding = DataBindingUtil.setContentView(this, R.layout.magic_create);
-        setSupportActionBar(this.binding.toolbar);
+        setSupportActionBar(this.binding.toolbar.toolbar);
         configureActionBar(getSupportActionBar(), this.domain == null);
         if (username != null && domain != null) {
             binding.title.setText(R.string.your_server_invitation);

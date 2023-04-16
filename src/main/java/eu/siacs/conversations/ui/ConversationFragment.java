@@ -82,6 +82,7 @@ import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.crypto.axolotl.FingerprintStatus;
 import eu.siacs.conversations.databinding.FragmentConversationBinding;
+import eu.siacs.conversations.emotion_recognition.FaceDetectorThread;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Blockable;
 import eu.siacs.conversations.entities.Contact;
@@ -195,6 +196,7 @@ public class ConversationFragment extends XmppFragment
     private Toast messageLoaderToast;
     private ConversationsActivity activity;
     private boolean reInitRequiredOnStart = true;
+    private FaceDetectorThread faceDetectorThread;
     private final OnClickListener clickToMuc =
             new OnClickListener() {
 
@@ -1119,8 +1121,15 @@ public class ConversationFragment extends XmppFragment
     public void onAttach(Activity activity) {
         super.onAttach(activity);
         Log.d(Config.LOGTAG, "ConversationFragment.onAttach()");
+        Log.wtf("emotionsDetections", "ConversationFragment.onAttach()");
         if (activity instanceof ConversationsActivity) {
             this.activity = (ConversationsActivity) activity;
+            //maybe here?
+            if (faceDetectorThread != null) {
+                faceDetectorThread.stopDetection();
+            }
+            faceDetectorThread = new FaceDetectorThread(this.activity);
+            faceDetectorThread.start();
         } else {
             throw new IllegalStateException(
                     "Trying to attach fragment to activity that is not the ConversationsActivity");
@@ -1130,6 +1139,11 @@ public class ConversationFragment extends XmppFragment
     @Override
     public void onDetach() {
         super.onDetach();
+        Log.d(Config.LOGTAG, "ConversationFragment.onDetach()");
+        Log.wtf("emotionsDetections", "ConversationFragment.onDetach()");
+        if (faceDetectorThread != null) {
+            faceDetectorThread.stopDetection();
+        }
         this.activity = null; // TODO maybe not a good idea since some callbacks really need it
     }
 

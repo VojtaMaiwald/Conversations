@@ -29,7 +29,7 @@ public class MediaBrowserActivity extends XmppActivity implements OnMediaLoaded 
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.binding = DataBindingUtil.setContentView(this,R.layout.activity_media_browser);
-        setSupportActionBar(binding.toolbar);
+        setSupportActionBar(binding.toolbar.toolbar);
         configureActionBar(getSupportActionBar());
         mMediaAdapter = new MediaAdapter(this, R.dimen.media_size);
         this.binding.media.setAdapter(mMediaAdapter);

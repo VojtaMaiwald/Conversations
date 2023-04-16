@@ -77,6 +77,23 @@ dependencies {
     implementation 'com.google.guava:guava:31.1-android'
     quicksyImplementation 'io.michaelrocks:libphonenumber-android:8.12.49'
     implementation 'im.conversations.webrtc:webrtc-android:104.0.0'
+
+    implementation 'androidx.camera:camera-view:1.2.0'
+    implementation "androidx.camera:camera-core:1.2.0"
+    implementation "androidx.camera:camera-camera2:1.2.0"
+    implementation "androidx.camera:camera-lifecycle:1.2.0"
+    implementation "androidx.camera:camera-video:1.2.0"
+    implementation "androidx.camera:camera-extensions:1.2.0"
+
+    implementation 'com.google.mlkit:face-detection:16.1.5'
+
+    implementation 'org.tensorflow:tensorflow-lite:2.11.0'
+    implementation 'org.tensorflow:tensorflow-lite-support:0.4.3'
+    implementation 'org.tensorflow:tensorflow-lite-metadata:0.4.3'
+    implementation 'org.tensorflow:tensorflow-lite-gpu:2.11.0'
+    implementation 'org.tensorflow:tensorflow-lite-gpu-api:2.11.0'
+    implementation 'org.tensorflow:tensorflow-lite-gpu-delegate-plugin:0.4.3'
+    implementation 'org.tensorflow:tensorflow-lite-task-vision:0.4.3'
 }
 
 ext {
@@ -86,11 +103,11 @@ ext {
 
 android {
     namespace 'eu.siacs.conversations'
-    compileSdkVersion 32
+    compileSdkVersion 33
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 32
+        targetSdkVersion 33
         versionCode 42050
         versionName "2.12.2"
         archivesBaseName += "-$versionName"
@@ -119,6 +136,13 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+    buildFeatures {
+        viewBinding true
+        mlModelBinding true
+    }
+    aaptOptions {
+        noCompress "tflite"
     }
 
     flavorDimensions("mode", "distribution")

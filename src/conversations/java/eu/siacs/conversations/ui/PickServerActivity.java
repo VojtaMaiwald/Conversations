@@ -66,7 +66,7 @@ public class PickServerActivity extends XmppActivity {
         }
         super.onCreate(savedInstanceState);
         ActivityPickServerBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_pick_server);
-        setSupportActionBar(binding.toolbar);
+        setSupportActionBar(binding.toolbar.toolbar);
         configureActionBar(getSupportActionBar());
         binding.useCim.setOnClickListener(v -> {
             final Intent intent = new Intent(this, MagicCreateActivity.class);

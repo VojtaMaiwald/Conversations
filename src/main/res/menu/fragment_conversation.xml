@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/emotion_icon"
+        android:orderInCategory="0"
+        android:icon="@drawable/nonface"
+        android:title="@string/emotion"
+        app:showAsAction="always" >
+    </item>
     <item
         android:id="@+id/action_ongoing_call"
         android:icon="?attr/icon_ongoing_call"
@@ -12,7 +20,7 @@
         android:icon="?attr/icon_call"
         android:orderInCategory="10"
         android:title="@string/make_call"
-        app:showAsAction="always">
+        app:showAsAction="always" >
         <menu>
             <item
                 android:id="@+id/action_audio_call"
@@ -25,33 +33,12 @@
         </menu>
     </item>
     <item
-        android:id="@+id/action_security"
-        android:icon="?attr/icon_not_secure"
-        android:orderInCategory="20"
-        android:title="@string/encrypted_with_omemo"
-        app:showAsAction="always">
-        <menu>
-            <group android:checkableBehavior="single">
-                <item
-                    android:id="@+id/encryption_choice_none"
-                    android:title="@string/encryption_choice_unencrypted" />
-                <item
-                    android:id="@+id/encryption_choice_axolotl"
-                    android:title="@string/encryption_choice_omemo" />
-                <item
-                    android:id="@+id/encryption_choice_pgp"
-                    android:title="@string/encryption_choice_pgp" />
-            </group>
-        </menu>
-    </item>
-    <item
         android:id="@+id/action_attach_file"
         android:icon="?attr/icon_new_attachment"
         android:orderInCategory="30"
         android:title="@string/attach_file"
-        app:showAsAction="always">
+        app:showAsAction="never" >
         <menu>
-
             <item
                 android:id="@+id/attach_choose_file"
                 android:icon="?attr/ic_attach_document"
@@ -116,23 +103,43 @@
         android:title="@string/action_end_conversation"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_security"
+        android:icon="?attr/icon_not_secure"
         android:orderInCategory="70"
+        android:title="@string/encryption">
+        <menu>
+            <item
+                android:id="@+id/encryption_choice_none"
+                android:orderInCategory="71"
+                android:title="@string/encryption_choice_unencrypted" />
+            <item
+                android:id="@+id/encryption_choice_axolotl"
+                android:orderInCategory="72"
+                android:title="@string/encryption_choice_omemo" />
+            <item
+                android:id="@+id/encryption_choice_pgp"
+                android:orderInCategory="73"
+                android:title="@string/encryption_choice_pgp" />
+        </menu>
+    </item>
+    <item
+        android:orderInCategory="80"
         android:title="@string/more_options">
         <menu>
             <item
                 android:id="@+id/action_mute"
-                android:orderInCategory="71"
+                android:orderInCategory="81"
                 android:title="@string/disable_notifications"
                 app:showAsAction="never" />
             <item
                 android:id="@+id/action_unmute"
-                android:orderInCategory="72"
+                android:orderInCategory="82"
                 android:title="@string/enable_notifications"
                 app:showAsAction="never" />
 
             <item
                 android:id="@+id/action_toggle_pinned"
-                android:orderInCategory="73"
+                android:orderInCategory="83"
                 android:title="@string/add_to_favorites"
                 app:showAsAction="never" />
         </menu>

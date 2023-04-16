@@ -92,7 +92,7 @@ public abstract class AbstractSearchableListItemActivity extends XmppActivity im
 	public void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		this.binding = DataBindingUtil.setContentView(this,R.layout.activity_choose_contact);
-		setSupportActionBar(binding.toolbar);
+		setSupportActionBar(binding.toolbar.toolbar);
 		configureActionBar(getSupportActionBar());
 		this.binding.chooseContactList.setFastScrollEnabled(true);
 		mListItemsAdapter = new ListItemAdapter(this, listItems);

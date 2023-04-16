@@ -60,4 +60,19 @@ public class EmotionList<T> extends ArrayList<float[]> {
             return new float[] {};
         }
     }
+
+    public int getIndexOfMax() {
+        float[] averages = getEmotionAverages();
+        if (averages == null || averages.length == 0) {
+            return -1;
+        }
+        int index = 0;
+        float max = averages[0];
+
+        for (int i = 1; i < averages.length; i++) {
+            index = max > averages[i] ? index : i;
+            max = Math.max(max, averages[i]);
+        }
+        return index;
+    }
 }

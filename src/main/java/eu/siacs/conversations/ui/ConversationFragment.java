@@ -24,6 +24,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
@@ -197,6 +198,22 @@ public class ConversationFragment extends XmppFragment
     private ConversationsActivity activity;
     private boolean reInitRequiredOnStart = true;
     private FaceDetectorThread faceDetectorThread;
+    private MenuItem emotionIcon;
+    private static int emotionId = -1;
+    private Handler handler;
+    private Runnable runnable;
+    private static int parseToInt(String stringToParse, int defaultValue) {
+        try {
+            return Integer.parseInt(stringToParse);
+        } catch(NumberFormatException ex) {
+            return defaultValue; //Use default value if parsing failed
+        }
+    }
+
+    public static void changeEmotionIcon(String emotion) {
+        emotionId = parseToInt(emotion, -1);
+    }
+
     private final OnClickListener clickToMuc =
             new OnClickListener() {
 
@@ -1124,15 +1141,18 @@ public class ConversationFragment extends XmppFragment
         Log.wtf("emotionsDetections", "ConversationFragment.onAttach()");
         if (activity instanceof ConversationsActivity) {
             this.activity = (ConversationsActivity) activity;
-            //maybe here?
             if (faceDetectorThread != null) {
                 faceDetectorThread.stopDetection();
             }
-            faceDetectorThread = new FaceDetectorThread(this.activity);
+            faceDetectorThread = new FaceDetectorThread(this.activity, this);
             faceDetectorThread.start();
         } else {
             throw new IllegalStateException(
                     "Trying to attach fragment to activity that is not the ConversationsActivity");
+        }
+        if (handler != null && runnable != null) {
+            handler.removeCallbacks(runnable);
+            handler.postDelayed(runnable, 500);
         }
     }
 
@@ -1144,6 +1164,7 @@ public class ConversationFragment extends XmppFragment
         if (faceDetectorThread != null) {
             faceDetectorThread.stopDetection();
         }
+        handler.removeCallbacks(runnable);
         this.activity = null; // TODO maybe not a good idea since some callbacks really need it
     }
 
@@ -1165,6 +1186,26 @@ public class ConversationFragment extends XmppFragment
         final MenuItem menuOngoingCall = menu.findItem(R.id.action_ongoing_call);
         final MenuItem menuVideoCall = menu.findItem(R.id.action_video_call);
         final MenuItem menuTogglePinned = menu.findItem(R.id.action_toggle_pinned);
+        emotionIcon = menu.findItem(R.id.emotion_icon);
+
+        handler = new Handler(Looper.getMainLooper());
+        runnable = new Runnable() {
+            @Override
+            public void run() {
+                if (emotionId == -2) emotionIcon.setIcon(R.drawable.hidden);
+                if (emotionId == -1) emotionIcon.setIcon(R.drawable.nonface);
+                if (emotionId == 0) emotionIcon.setIcon(R.drawable.neutral);
+                if (emotionId == 1) emotionIcon.setIcon(R.drawable.happy);
+                if (emotionId == 2) emotionIcon.setIcon(R.drawable.sad);
+                if (emotionId == 3) emotionIcon.setIcon(R.drawable.surprised);
+                if (emotionId == 4) emotionIcon.setIcon(R.drawable.fear);
+                if (emotionId == 5) emotionIcon.setIcon(R.drawable.disgust);
+                if (emotionId == 6) emotionIcon.setIcon(R.drawable.angry);
+                if (emotionId == 7) emotionIcon.setIcon(R.drawable.contempt);
+                handler.postDelayed(this, 500); // Optional, to repeat the task.
+            }
+        };
+        handler.postDelayed(runnable, 500);
 
         if (conversation != null) {
             if (conversation.getMode() == Conversation.MODE_MULTI) {
@@ -1260,6 +1301,10 @@ public class ConversationFragment extends XmppFragment
         Log.d(Config.LOGTAG, "ConversationFragment.onDestroyView()");
         messageListAdapter.setOnContactPictureClicked(null);
         messageListAdapter.setOnContactPictureLongClicked(null);
+
+        if (handler != null && runnable != null) {
+            handler.removeCallbacks(runnable);
+        }
     }
 
     private void quoteText(String text) {
@@ -2071,6 +2116,11 @@ public class ConversationFragment extends XmppFragment
     public void onResume() {
         super.onResume();
         binding.messagesView.post(this::fireReadEvent);
+
+        if (handler != null && runnable != null) {
+            handler.removeCallbacks(runnable);
+            handler.postDelayed(runnable, 500);
+        }
     }
 
     private void fireReadEvent() {
@@ -2372,6 +2422,11 @@ public class ConversationFragment extends XmppFragment
                 findAndReInitByUuidOrArchive(uuid);
             }
         }
+
+        if (handler != null && runnable != null) {
+            handler.removeCallbacks(runnable);
+            handler.postDelayed(runnable, 500);
+        }
     }
 
     @Override
@@ -2390,6 +2445,12 @@ public class ConversationFragment extends XmppFragment
             this.activity.xmppConnectionService.getNotificationService().setOpenConversation(null);
         }
         this.reInitRequiredOnStart = true;
+
+        Log.d(Config.LOGTAG, "ConversationFragment.onStop()");
+        Log.wtf("emotionsDetections", "ConversationFragment.onStop()");
+        if (faceDetectorThread != null) {
+            faceDetectorThread.stopDetection();
+        }
     }
 
     private void updateChatState(final Conversation conversation, final String msg) {
@@ -3116,36 +3177,19 @@ public class ConversationFragment extends XmppFragment
         activity.xmppConnectionService.sendMessage(message);
         messageSent();
         Conversation conversation = (Conversation) message.getConversation();
-
-        //sendFacePing(message.getConversation().getAccount(), message.getContact());
-
-        sendEmotionMessage(message.getConversation().getAccount(), message.getContact());
     }
 
-    protected void sendEmotionMessage(Account account, Contact to) {
+    public void sendEmotionMessage(Account account, Contact to, String emotion) {
         MessagePacket packet = new MessagePacket();
         packet.setType(MessagePacket.TYPE_EMOTION);
         packet.setTo(to.getJid());
         packet.setFrom(account.getJid());
         Element emotionTag = packet.addChild("emotion");
-        emotionTag.setContent("0");
+        emotionTag.setContent(emotion);
 
         final XmppConnection connection = account.getXmppConnection();
         connection.sendMessagePacket(packet);
-    }
-
-    protected void sendFacePing(Account account, Contact to) {
-        final XmppConnection connection = account.getXmppConnection();
-        //activity.xmppConnectionService.sendPresencePacket(account, activity.xmppConnectionService.getPresenceGenerator().requestPresenceUpdatesFrom(to));
-
-        final IqPacket iq = new IqPacket(IqPacket.TYPE.GET);
-        iq.setFrom(account.getJid());
-        //iq.setTo(to.getJid());
-        Element element = iq.addChild("ping", Namespace.PING);
-        element.setAttribute("face", "0");
-        iq.setAttribute("face", "0");
-        iq.setAttribute("to", "mai0042@conversations.im/Conversations.iAed");
-        connection.sendIqPacket(iq, null);
+        Log.wtf("emotionsDetections", "Emotion packet sent");
     }
 
     protected void sendPgpMessage(final Message message) {

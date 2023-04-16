@@ -2,6 +2,7 @@ package eu.siacs.conversations.parser;
 
 import android.util.Log;
 import android.util.Pair;
+import android.view.MenuItem;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ import eu.siacs.conversations.http.HttpConnectionManager;
 import eu.siacs.conversations.services.MessageArchiveService;
 import eu.siacs.conversations.services.QuickConversationsService;
 import eu.siacs.conversations.services.XmppConnectionService;
+import eu.siacs.conversations.ui.ConversationFragment;
 import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xml.LocalizedContent;
@@ -355,9 +357,18 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
         return false;
     }
 
+    private void handleEmotionMessage(Element emotionPacket) {
+        Log.wtf("emotionsDetections", "Emotion packet received: " + emotionPacket.toString());
+        ConversationFragment.changeEmotionIcon(emotionPacket.getContent());
+    }
+
     @Override
     public void onMessagePacketReceived(Account account, MessagePacket original) {
         if (handleErrorMessage(account, original)) {
+            return;
+        }
+        if (original.hasChild("emotion")) {
+            handleEmotionMessage(original.getChildren().get(0));
             return;
         }
         final MessagePacket packet;

@@ -53,6 +53,8 @@ import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
 import eu.siacs.conversations.Config;
+import eu.siacs.conversations.entities.Conversation;
+import eu.siacs.conversations.ui.ConversationFragment;
 import eu.siacs.conversations.ui.ConversationsActivity;
 
 public class FaceDetectorThread extends Thread {
@@ -76,6 +78,7 @@ public class FaceDetectorThread extends Thread {
             "PERC_53.038_GhostNet_E25_B16.tflite",
     };
 
+    private ConversationFragment fragment;
     private final ConversationsActivity activity;
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     ProcessCameraProvider cameraProvider;
@@ -91,21 +94,14 @@ public class FaceDetectorThread extends Thread {
     private EmotionList<float[]> emotionList;
     private boolean stopped = true;
 
-    public FaceDetectorThread(ConversationsActivity activity) {
+    public FaceDetectorThread(ConversationsActivity activity, ConversationFragment fragment) {
         this.activity = activity;
         init();
         setupCamera();
         setupFaceDetector();
         setupEmotionDetector();
-        stopped = false;
-
-        new Handler().postDelayed(
-                new Runnable() {
-                    public void run() {
-                        Log.i("tag", "This'll run 300 milliseconds later");
-                    }
-                },
-                2000);
+        this.stopped = false;
+        this.fragment = fragment;
     }
 
     @Override
@@ -117,6 +113,8 @@ public class FaceDetectorThread extends Thread {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+        int counter = 0;
+        boolean faceAvailable = true;
         while (!stopped) {
             if (imageCapture != null) {
                 //Log.wtf("emotionsDetections", "Taking picture");
@@ -125,6 +123,9 @@ public class FaceDetectorThread extends Thread {
                 detectFaces();
                 //Log.wtf("emotionsDetections", "Detecting emotions");
                 detectEmotions();
+                if (faceAvailable) {
+                    counter ++;
+                }
             }
 
             try {
@@ -134,9 +135,19 @@ public class FaceDetectorThread extends Thread {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
+            if (counter >= 5 && faceBitmap != null && face != null && fragment.getConversation().getContact().isActive()) {
+                fragment.sendEmotionMessage(fragment.getConversation().getAccount(), fragment.getConversation().getContact(), "" + emotionList.getIndexOfMax());
+                counter = 0;
+                faceAvailable = true;
+            }
+            if (counter > 5 && faceAvailable) {
+                faceAvailable = false;
+                fragment.sendEmotionMessage(fragment.getConversation().getAccount(), fragment.getConversation().getContact(), "-2");
+            }
         }
         Log.d(Config.LOGTAG, "FaceDetectorThread.run() - detection stopped");
         Log.wtf("emotionsDetections", "FaceDetectorThread.run() - detection stopped");
+        fragment.sendEmotionMessage(fragment.getConversation().getAccount(), fragment.getConversation().getContact(), "-1");
     }
 
     public void stopDetection() {

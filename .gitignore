@@ -45,3 +45,5 @@ proguard/
 
 import-summary.txt
 .navigation/
+
+!app_build_arm.apk

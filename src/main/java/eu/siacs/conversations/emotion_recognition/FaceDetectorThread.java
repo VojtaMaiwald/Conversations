@@ -58,29 +58,11 @@ import eu.siacs.conversations.ui.ConversationFragment;
 import eu.siacs.conversations.ui.ConversationsActivity;
 
 public class FaceDetectorThread extends Thread {
-    private static Boolean REGRESSION = false;
+    private final String CLASSIFIER = "MnasNet_A1.0_DEPTH1.tflite";
+    private final int emotions = 8;
 
-    private final String[] EMOTIONS = new String[]{"Neutral", "Happiness", "Sadness", "Surprise", "Fear", "Disgust", "Anger", "Contempt"};
-    private final String[] REGRESSORS = new String[]{
-            "RMSE_0.380_MnasNet_AroVal_E10_B8_A1.0_DEPTH1_Adam0.001.tflite",
-            "RMSE_0.392_EfficientNetB0_AroVal_E25_B8_SGD0.01.tflite",
-            "RMSE_0.398_MobileNetV2_AroVal_B8_E25_D0.5_Adam_0.01.tflite",
-    };
-    private final String[] CLASSIFIERS = new String[]{
-            "PERC_55.939_EfficientNetB0_E25_B8.tflite",
-            "PERC_55.639_DenseNet121_E25_B8_Adam0.0001.tflite",
-            "PERC_55.489_EfficientNetB1_E25_B8_SGD0.01.tflite",
-            "PERC_54.839_MobileNetV2_E25_B8_D_0.2.tflite",
-            "PERC_54.564_MnasNet_E25_B8_A1.0_DEPTH1.tflite",
-            "PERC_54.414_SqueezeNet_E25_B8_COMPR1.0_D0.2_Adam0.0001.tflite",
-            "PERC_53.938_MobileNetV3Small_E30_B16_A_1.25_D_0.5.tflite",
-            "PERC_53.038_MobileNetV3Large_E25_B16_A_0.75_D_0.2_MINI.tflite",
-            "PERC_53.038_GhostNet_E25_B16.tflite",
-    };
-
-    private ConversationFragment fragment;
+    private final ConversationFragment fragment;
     private final ConversationsActivity activity;
-    private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     ProcessCameraProvider cameraProvider;
     private ImageCapture imageCapture;
     private MlImage mlImage;
@@ -109,7 +91,7 @@ public class FaceDetectorThread extends Thread {
         Log.d(Config.LOGTAG, "FaceDetectorThread.run()");
         Log.wtf("emotionsDetections", "FaceDetectorThread.run() - detection started");
         try {
-            this.sleep(2000);
+            sleep(2000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -117,11 +99,8 @@ public class FaceDetectorThread extends Thread {
         boolean faceAvailable = true;
         while (!stopped) {
             if (imageCapture != null) {
-                //Log.wtf("emotionsDetections", "Taking picture");
                 takePicture();
-                //Log.wtf("emotionsDetections", "Detecting faces");
                 detectFaces();
-                //Log.wtf("emotionsDetections", "Detecting emotions");
                 detectEmotions();
                 if (faceAvailable) {
                     counter ++;
@@ -129,9 +108,7 @@ public class FaceDetectorThread extends Thread {
             }
 
             try {
-                //Log.wtf("emotionsDetections", "Sleeping in loop");
-                this.sleep(200);
-                //Log.wtf("emotionsDetections", "Waking up in loop");
+                sleep(300);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -142,7 +119,7 @@ public class FaceDetectorThread extends Thread {
             }
             if (counter > 5 && faceAvailable) {
                 faceAvailable = false;
-                fragment.sendEmotionMessage(fragment.getConversation().getAccount(), fragment.getConversation().getContact(), "-2");
+                fragment.sendEmotionMessage(fragment.getConversation().getAccount(), fragment.getConversation().getContact(), "8");
             }
         }
         Log.d(Config.LOGTAG, "FaceDetectorThread.run() - detection stopped");
@@ -155,7 +132,7 @@ public class FaceDetectorThread extends Thread {
     }
 
     private void init() {
-        emotionList = new EmotionList<>(10, EMOTIONS.length);
+        emotionList = new EmotionList<>(10, emotions);
         ActivityCompat.requestPermissions(this.activity, new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             ActivityCompat.requestPermissions(this.activity, new String[]{Manifest.permission.MANAGE_EXTERNAL_STORAGE}, 2);
@@ -163,21 +140,7 @@ public class FaceDetectorThread extends Thread {
     }
 
     private void setupCamera() {
-        cameraProviderFuture = ProcessCameraProvider.getInstance(this.activity.getApplicationContext());
-        /*
-        cameraProviderFuture.addListener(() -> {
-            try {
-                cameraProvider = cameraProviderFuture.get();
-                Preview preview = new Preview.Builder().build();
-                CameraSelector cameraSelector = new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_FRONT).build();
-                imageCapture = new ImageCapture.Builder().setTargetRotation(Surface.ROTATION_0).setTargetResolution(new Size(360, 640)).build();
-                cameraProvider.unbindAll();
-                cameraProvider.bindToLifecycle(this.activity, cameraSelector, imageCapture, preview);
-            } catch (ExecutionException | InterruptedException e) {
-                e.printStackTrace();
-            }
-        }, ContextCompat.getMainExecutor(this.activity.getApplicationContext()));
-        */
+        ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(this.activity.getApplicationContext());
         try {
             cameraProvider = cameraProviderFuture.get();
             Preview preview = new Preview.Builder().build();
@@ -237,7 +200,7 @@ public class FaceDetectorThread extends Thread {
     }
 
     private MappedByteBuffer loadModelFile() throws IOException {
-        AssetFileDescriptor assetFileDescriptor = this.activity.getAssets().openFd(REGRESSION ? REGRESSORS[0] : CLASSIFIERS[0]);
+        AssetFileDescriptor assetFileDescriptor = this.activity.getAssets().openFd(CLASSIFIER);
         FileInputStream fileInputStream = new FileInputStream(assetFileDescriptor.getFileDescriptor());
         FileChannel fileChannel = fileInputStream.getChannel();
         return fileChannel.map(FileChannel.MapMode.READ_ONLY, assetFileDescriptor.getStartOffset(), assetFileDescriptor.getDeclaredLength());
@@ -261,10 +224,13 @@ public class FaceDetectorThread extends Thread {
         DataType inputDataType = interpreter.getInputTensor(0).dataType();
         TensorImage tensorImage = new TensorImage(inputDataType);
         tensorImage.load(faceBitmap);
-        FloatBuffer output = FloatBuffer.allocate(REGRESSION ? 2 : 8);
+        FloatBuffer output = FloatBuffer.allocate(emotions);
 
         try {
+            long startTime = System.currentTimeMillis();
             interpreter.run(tensorImage.getBuffer(), output);
+            long difference = System.currentTimeMillis() - startTime;
+            Log.wtf("emotionsDetectionsTime", difference + " ms");
             emotionList.add(output.array());
         }
         catch (Exception ignored) {

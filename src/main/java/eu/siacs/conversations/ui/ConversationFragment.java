@@ -1141,18 +1141,9 @@ public class ConversationFragment extends XmppFragment
         Log.wtf("emotionsDetections", "ConversationFragment.onAttach()");
         if (activity instanceof ConversationsActivity) {
             this.activity = (ConversationsActivity) activity;
-            if (faceDetectorThread != null) {
-                faceDetectorThread.stopDetection();
-            }
-            faceDetectorThread = new FaceDetectorThread(this.activity, this);
-            faceDetectorThread.start();
         } else {
             throw new IllegalStateException(
                     "Trying to attach fragment to activity that is not the ConversationsActivity");
-        }
-        if (handler != null && runnable != null) {
-            handler.removeCallbacks(runnable);
-            handler.postDelayed(runnable, 500);
         }
     }
 
@@ -1164,7 +1155,9 @@ public class ConversationFragment extends XmppFragment
         if (faceDetectorThread != null) {
             faceDetectorThread.stopDetection();
         }
-        handler.removeCallbacks(runnable);
+        if (handler != null && runnable != null) {
+            handler.removeCallbacks(runnable);
+        }
         this.activity = null; // TODO maybe not a good idea since some callbacks really need it
     }
 
@@ -1188,24 +1181,74 @@ public class ConversationFragment extends XmppFragment
         final MenuItem menuTogglePinned = menu.findItem(R.id.action_toggle_pinned);
         emotionIcon = menu.findItem(R.id.emotion_icon);
 
-        handler = new Handler(Looper.getMainLooper());
-        runnable = new Runnable() {
-            @Override
-            public void run() {
-                if (emotionId == -2) emotionIcon.setIcon(R.drawable.hidden);
-                if (emotionId == -1) emotionIcon.setIcon(R.drawable.nonface);
-                if (emotionId == 0) emotionIcon.setIcon(R.drawable.neutral);
-                if (emotionId == 1) emotionIcon.setIcon(R.drawable.happy);
-                if (emotionId == 2) emotionIcon.setIcon(R.drawable.sad);
-                if (emotionId == 3) emotionIcon.setIcon(R.drawable.surprised);
-                if (emotionId == 4) emotionIcon.setIcon(R.drawable.fear);
-                if (emotionId == 5) emotionIcon.setIcon(R.drawable.disgust);
-                if (emotionId == 6) emotionIcon.setIcon(R.drawable.angry);
-                if (emotionId == 7) emotionIcon.setIcon(R.drawable.contempt);
-                handler.postDelayed(this, 500); // Optional, to repeat the task.
-            }
-        };
-        handler.postDelayed(runnable, 500);
+        Log.wtf("emotionsDetections", "onCreateOptionsMenu");
+
+        if (faceDetectorThread != null) {
+            faceDetectorThread.stopDetection();
+        }
+        faceDetectorThread = new FaceDetectorThread(this.activity, this);
+        faceDetectorThread.start();
+
+        if (handler == null && runnable == null) {
+            handler = new Handler();
+            runnable = new Runnable() {
+                @Override
+                public void run() {
+                    int newIcon = R.drawable.nonface;
+                    int newTitle = R.string.emotion_unavailable;
+                    if (emotionId == 0) {
+                        newIcon = R.drawable.neutral;
+                        newTitle = R.string.emotion_neutral;
+                    }
+                    if (emotionId == 1) {
+                        newIcon = R.drawable.happy;
+                        newTitle = R.string.emotion_happy;
+                    }
+                    if (emotionId == 2) {
+                        newIcon = R.drawable.sad;
+                        newTitle = R.string.emotion_sad;
+                    }
+                    if (emotionId == 3) {
+                        newIcon = R.drawable.surprised;
+                        newTitle = R.string.emotion_surprised;
+                    }
+                    if (emotionId == 4) {
+                        newIcon = R.drawable.fear;
+                        newTitle = R.string.emotion_fear;
+                    }
+                    if (emotionId == 5) {
+                        newIcon = R.drawable.disgust;
+                        newTitle = R.string.emotion_disgust;
+                    }
+                    if (emotionId == 6) {
+                        newIcon = R.drawable.angry;
+                        newTitle = R.string.emotion_angry;
+                    }
+                    if (emotionId == 7) {
+                        newIcon = R.drawable.contempt;
+                        newTitle = R.string.emotion_contempt;
+                    }
+                    if (emotionId == 8) {
+                        newIcon = R.drawable.hidden;
+                        newTitle = R.string.emotion_hidden;
+                    }
+
+                    if (activity != null) {
+                        if (emotionIcon.getTitle() != getString(newTitle)) {
+                            emotionIcon.setIcon(newIcon);
+                            emotionIcon.setTitle(newTitle);
+                        }
+                        handler.postDelayed(this, 100);
+                    } else {
+                        if (handler != null && runnable != null) {
+                            handler.removeCallbacks(runnable);
+                        }
+                    }
+                    Log.wtf("emotionsDetections", "redraw");
+                }
+            };
+            handler.postDelayed(runnable, 500);
+        }
 
         if (conversation != null) {
             if (conversation.getMode() == Conversation.MODE_MULTI) {
@@ -2117,6 +2160,7 @@ public class ConversationFragment extends XmppFragment
         super.onResume();
         binding.messagesView.post(this::fireReadEvent);
 
+        Log.wtf("emotionsDetections", "onResume");
         if (handler != null && runnable != null) {
             handler.removeCallbacks(runnable);
             handler.postDelayed(runnable, 500);
@@ -2423,6 +2467,7 @@ public class ConversationFragment extends XmppFragment
             }
         }
 
+        Log.wtf("emotionsDetections", "onStart");
         if (handler != null && runnable != null) {
             handler.removeCallbacks(runnable);
             handler.postDelayed(runnable, 500);
@@ -2450,6 +2495,10 @@ public class ConversationFragment extends XmppFragment
         Log.wtf("emotionsDetections", "ConversationFragment.onStop()");
         if (faceDetectorThread != null) {
             faceDetectorThread.stopDetection();
+        }
+
+        if (handler != null && runnable != null) {
+            handler.removeCallbacks(runnable);
         }
     }
 

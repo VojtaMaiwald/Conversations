@@ -6,7 +6,7 @@
         android:id="@+id/emotion_icon"
         android:orderInCategory="0"
         android:icon="@drawable/nonface"
-        android:title="@string/emotion"
+        android:title="@string/emotion_unavailable"
         app:showAsAction="always" >
     </item>
     <item

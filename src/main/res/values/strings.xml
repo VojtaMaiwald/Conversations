@@ -185,6 +185,7 @@
     <string name="emotion_disgust">Disgust</string>
     <string name="emotion_angry">Angry</string>
     <string name="emotion_contempt">Contempt</string>
+    <string name="emotion_hidden">Hidden</string>
     <string name="emotion_unavailable">No emotion available</string>
     <string name="mgmt_account_delete">Delete account</string>
     <string name="mgmt_account_disable">Temporarily disable</string>

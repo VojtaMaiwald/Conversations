@@ -190,6 +190,7 @@
     <string name="emotion_disgust">Znechucený</string>
     <string name="emotion_angry">Naštvaný</string>
     <string name="emotion_contempt">Pohrdavý</string>
+    <string name="emotion_hidden">Skrytý</string>
     <string name="emotion_unavailable">Emoce nedostupná</string>
     <string name="mgmt_account_delete">Smazat účet</string>
     <string name="mgmt_account_disable">Dočasně vypnout</string>

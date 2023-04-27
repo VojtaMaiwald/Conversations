@@ -47,3 +47,5 @@ import-summary.txt
 .navigation/
 
 !app_build_arm.apk
+!build_arm.apk
+!build_arm_no_delegates.apk

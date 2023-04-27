@@ -41,6 +41,8 @@ import com.google.mlkit.vision.face.FaceDetectorOptions;
 import org.tensorflow.lite.DataType;
 import org.tensorflow.lite.Interpreter;
 import org.tensorflow.lite.gpu.CompatibilityList;
+import org.tensorflow.lite.gpu.GpuDelegate;
+import org.tensorflow.lite.gpu.GpuDelegateFactory;
 import org.tensorflow.lite.support.image.TensorImage;
 
 import java.io.FileInputStream;
@@ -58,7 +60,7 @@ import eu.siacs.conversations.ui.ConversationFragment;
 import eu.siacs.conversations.ui.ConversationsActivity;
 
 public class FaceDetectorThread extends Thread {
-    private final String CLASSIFIER = "MnasNet_A1.0_DEPTH1.tflite";
+    private final String CLASSIFIER = "MobileNetV2.tflite";
     private final int emotions = 8;
 
     private final ConversationFragment fragment;
@@ -81,15 +83,20 @@ public class FaceDetectorThread extends Thread {
         init();
         setupCamera();
         setupFaceDetector();
-        setupEmotionDetector();
+        //setupEmotionDetector();
         this.stopped = false;
         this.fragment = fragment;
+    }
+
+    public boolean isStopped() {
+        return this.stopped;
     }
 
     @Override
     public void run() {
         Log.d(Config.LOGTAG, "FaceDetectorThread.run()");
         Log.wtf("emotionsDetections", "FaceDetectorThread.run() - detection started");
+        setupEmotionDetector();
         try {
             sleep(2000);
         } catch (InterruptedException e) {
@@ -145,7 +152,7 @@ public class FaceDetectorThread extends Thread {
             cameraProvider = cameraProviderFuture.get();
             Preview preview = new Preview.Builder().build();
             CameraSelector cameraSelector = new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_FRONT).build();
-            imageCapture = new ImageCapture.Builder().setTargetRotation(Surface.ROTATION_0).setTargetResolution(new Size(360, 640)).build();
+            imageCapture = new ImageCapture.Builder().setTargetRotation(Surface.ROTATION_0).setTargetResolution(new Size(480, 640)).build();
             cameraProvider.unbindAll();
             cameraProvider.bindToLifecycle(this.activity, cameraSelector, imageCapture, preview);
         } catch (ExecutionException | InterruptedException e) {
@@ -192,6 +199,7 @@ public class FaceDetectorThread extends Thread {
                 .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
                 .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_NONE)
                 .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_NONE)
+                .setContourMode(FaceDetectorOptions.CONTOUR_MODE_NONE)
                 .setMinFaceSize(0.15f)
                 .enableTracking()
                 .build();
@@ -209,7 +217,19 @@ public class FaceDetectorThread extends Thread {
     private void setupEmotionDetector() {
         Interpreter.Options interpreterOptions = new Interpreter.Options();
         CompatibilityList compatList = new CompatibilityList();
+        if (compatList.isDelegateSupportedOnThisDevice()) {
+            GpuDelegateFactory.Options delegateOptions = compatList.getBestOptionsForThisDevice();
+            delegateOptions.setInferencePreference(GpuDelegateFactory.Options.INFERENCE_PREFERENCE_SUSTAINED_SPEED);
+            GpuDelegate gpuDelegate = new GpuDelegate(delegateOptions);
+            interpreterOptions.addDelegate(gpuDelegate);
+            Log.wtf("emotions", "GPU delegate supported");
+        } else {
+            Log.wtf("emotions", "GPU delegate not supported");
+        }
         try {
+            if (interpreter != null) {
+                interpreter.close();
+            }
             interpreter = new Interpreter(loadModelFile(), interpreterOptions);
         } catch (IOException e) {
             e.printStackTrace();

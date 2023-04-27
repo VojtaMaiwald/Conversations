@@ -202,6 +202,7 @@ public class ConversationFragment extends XmppFragment
     private static int emotionId = -1;
     private Handler handler;
     private Runnable runnable;
+    private boolean typing = false;
     private static int parseToInt(String stringToParse, int defaultValue) {
         try {
             return Integer.parseInt(stringToParse);
@@ -1183,71 +1184,73 @@ public class ConversationFragment extends XmppFragment
 
         Log.wtf("emotionsDetections", "onCreateOptionsMenu");
 
-        if (faceDetectorThread != null) {
-            faceDetectorThread.stopDetection();
-        }
-        faceDetectorThread = new FaceDetectorThread(this.activity, this);
-        faceDetectorThread.start();
+        if (!typing) {
+            if (faceDetectorThread != null) {
+                faceDetectorThread.stopDetection();
+            }
+            faceDetectorThread = new FaceDetectorThread(this.activity, this);
+            faceDetectorThread.start();
 
-        if (handler == null && runnable == null) {
-            handler = new Handler();
-            runnable = new Runnable() {
-                @Override
-                public void run() {
-                    int newIcon = R.drawable.nonface;
-                    int newTitle = R.string.emotion_unavailable;
-                    if (emotionId == 0) {
-                        newIcon = R.drawable.neutral;
-                        newTitle = R.string.emotion_neutral;
-                    }
-                    if (emotionId == 1) {
-                        newIcon = R.drawable.happy;
-                        newTitle = R.string.emotion_happy;
-                    }
-                    if (emotionId == 2) {
-                        newIcon = R.drawable.sad;
-                        newTitle = R.string.emotion_sad;
-                    }
-                    if (emotionId == 3) {
-                        newIcon = R.drawable.surprised;
-                        newTitle = R.string.emotion_surprised;
-                    }
-                    if (emotionId == 4) {
-                        newIcon = R.drawable.fear;
-                        newTitle = R.string.emotion_fear;
-                    }
-                    if (emotionId == 5) {
-                        newIcon = R.drawable.disgust;
-                        newTitle = R.string.emotion_disgust;
-                    }
-                    if (emotionId == 6) {
-                        newIcon = R.drawable.angry;
-                        newTitle = R.string.emotion_angry;
-                    }
-                    if (emotionId == 7) {
-                        newIcon = R.drawable.contempt;
-                        newTitle = R.string.emotion_contempt;
-                    }
-                    if (emotionId == 8) {
-                        newIcon = R.drawable.hidden;
-                        newTitle = R.string.emotion_hidden;
-                    }
+            if (handler == null && runnable == null) {
+                handler = new Handler();
+                runnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        int newIcon = R.drawable.nonface;
+                        int newTitle = R.string.emotion_unavailable;
+                        if (emotionId == 0) {
+                            newIcon = R.drawable.neutral;
+                            newTitle = R.string.emotion_neutral;
+                        }
+                        if (emotionId == 1) {
+                            newIcon = R.drawable.happy;
+                            newTitle = R.string.emotion_happy;
+                        }
+                        if (emotionId == 2) {
+                            newIcon = R.drawable.sad;
+                            newTitle = R.string.emotion_sad;
+                        }
+                        if (emotionId == 3) {
+                            newIcon = R.drawable.surprised;
+                            newTitle = R.string.emotion_surprised;
+                        }
+                        if (emotionId == 4) {
+                            newIcon = R.drawable.fear;
+                            newTitle = R.string.emotion_fear;
+                        }
+                        if (emotionId == 5) {
+                            newIcon = R.drawable.disgust;
+                            newTitle = R.string.emotion_disgust;
+                        }
+                        if (emotionId == 6) {
+                            newIcon = R.drawable.angry;
+                            newTitle = R.string.emotion_angry;
+                        }
+                        if (emotionId == 7) {
+                            newIcon = R.drawable.contempt;
+                            newTitle = R.string.emotion_contempt;
+                        }
+                        if (emotionId == 8) {
+                            newIcon = R.drawable.hidden;
+                            newTitle = R.string.emotion_hidden;
+                        }
 
-                    if (activity != null) {
-                        if (emotionIcon.getTitle() != getString(newTitle)) {
-                            emotionIcon.setIcon(newIcon);
-                            emotionIcon.setTitle(newTitle);
+                        if (activity != null) {
+                            if (emotionIcon.getTitle() != getString(newTitle)) {
+                                emotionIcon.setIcon(newIcon);
+                                emotionIcon.setTitle(newTitle);
+                            }
+                            handler.postDelayed(this, 100);
+                        } else {
+                            if (handler != null && runnable != null) {
+                                handler.removeCallbacks(runnable);
+                            }
                         }
-                        handler.postDelayed(this, 100);
-                    } else {
-                        if (handler != null && runnable != null) {
-                            handler.removeCallbacks(runnable);
-                        }
+                        //Log.wtf("emotionsDetections", "redraw");
                     }
-                    Log.wtf("emotionsDetections", "redraw");
-                }
-            };
-            handler.postDelayed(runnable, 500);
+                };
+                handler.postDelayed(runnable, 500);
+            }
         }
 
         if (conversation != null) {
@@ -3436,6 +3439,7 @@ public class ConversationFragment extends XmppFragment
             service.sendChatState(conversation);
         }
         runOnUiThread(this::updateSendButton);
+        typing = true;
     }
 
     @Override
@@ -3449,6 +3453,7 @@ public class ConversationFragment extends XmppFragment
         if (status == Account.State.ONLINE && conversation.setOutgoingChatState(ChatState.PAUSED)) {
             service.sendChatState(conversation);
         }
+        typing = false;
     }
 
     @Override
